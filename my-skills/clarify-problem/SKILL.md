@@ -1,6 +1,6 @@
 ---
 name: clarify-problem
-description: Extracts what the user actually wants instead of what they think they should want, then surfaces baked-in assumptions after confirmation. Achieves this through one-question-at-a-time interview until ~95% confidence about the underlying intent. Use when an ask is underspecified ("build me X" without "for whom" or "why now"), when the user explicitly invokes ("interview me", "grill me", "are we sure?", "stress-test my thinking"), or when you catch yourself silently filling in ambiguous requirements before any plan, spec, or code exists.
+description: Extracts what the user actually wants instead of what they think they should want, surfaces baked-in assumptions after confirmation, identifies the binding decision criterion, proposes the best next action for user approval, and saves a markdown decision artifact. Achieves this through one-question-at-a-time interview until ~95% confidence about the underlying intent and decision pressure. Use when an ask is underspecified ("build me X" without "for whom" or "why now"), when the user explicitly invokes ("interview me", "grill me", "are we sure?", "stress-test my thinking"), or when you catch yourself silently filling in ambiguous requirements before any plan, spec, or code exists.
 ---
 
 # Clarify Problem
@@ -13,6 +13,8 @@ The cheapest moment to find this gap is before any plan, spec, or code exists. O
 
 This skill closes the gap before it costs anything. The other Define-phase skills assume you already know roughly what you want: `idea-refine` generates variations from an idea, `spec-driven-development` writes the requirements down, `doubt-driven-development` stress-tests a plan after you've drafted one. Clarify-problem is the part before all of those, where you ask one question at a time, with your best guess attached, until you can predict what the user is going to say before they say it.
 
+The final output is not just shared understanding. The skill must help the user choose the best next action: build, validate, research, write a spec, reduce scope, defer, kill, or do nothing. The agent recommends; the user decides.
+
 ## When to Use
 
 Apply this skill when:
@@ -20,7 +22,7 @@ Apply this skill when:
 - The ask is missing at least one of: **who** the user is, **why** they want it, what **success** looks like, what the binding **constraint** is
 - The request is conventional rather than specific ("build me X", "make it faster") and you can't unpack the convention without guessing
 - You're tempted to start with assumptions you haven't surfaced
-- The user hasn't said which value they're optimizing for when two reasonable ones are in tension (simplicity vs. flexibility, cost vs. speed)
+- The user hasn't said which value they're optimizing for when two reasonable ones are in tension (simplicity vs. flexibility, cost vs. speed, learning vs. shipping, validation vs. momentum)
 - The user explicitly invokes: "clarify problem", "grill me", "before we start, are we sure?", "stress-test my thinking"
 
 **When NOT to use:**
@@ -91,7 +93,32 @@ When you hear these, the question to ask is:
 
 That single question often does more work than the previous five.
 
-### Step 4: Restate intent in the user's own words
+### Step 4: Identify the binding decision criterion
+
+Before restating the intent, make sure you understand what should decide the next action. This is not another intake form. It is the tie-breaker the agent will use when choosing between plausible actions.
+
+Examples:
+
+- Move fast
+- Avoid wasted work
+- Learn by building
+- Validate demand before building
+- Reduce scope
+- Reduce risk
+- Preserve optionality
+- Make something shippable
+- Produce a reviewable artifact
+
+If the user has already made the criterion obvious, state it as part of the restate. If it is missing or there are competing criteria, ask one focused question with a guess attached:
+
+```
+Q: If we have to choose, what matters more right now: learning by building, or avoiding wasted work by validating first?
+GUESS: avoiding wasted work, because you've pushed several times on whether this is the right thing to build at all.
+```
+
+Do not wait until the final artifact to discover this. The binding decision criterion is part of the 95% confidence target.
+
+### Step 5: Restate intent in the user's own words
 
 When your confidence is high, write back what you now think the user wants. Keep it tight (5–8 lines), use their language where possible, and structure it so the user can confirm or correct line by line:
 
@@ -103,6 +130,7 @@ Here's what I now think you want:
 - Why now:      <one line — what changed>
 - Success:      <one line — how we know it worked>
 - Constraint:   <one line — the binding limit>
+- Decision:     <one line — the criterion that should decide the next action>
 - Out of scope: <one line — what we're explicitly not doing>
 
 Yes / no / refine?
@@ -110,7 +138,7 @@ Yes / no / refine?
 
 Including "Out of scope" is non-negotiable. Half of misalignment is silent disagreement about what is *not* being built.
 
-### Step 5: Confirm — explicit yes, not "whatever you think"
+### Step 6: Confirm — explicit yes, not "whatever you think"
 
 The gate is an explicit "yes." The following are **not** yes:
 
@@ -121,7 +149,7 @@ The gate is an explicit "yes." The following are **not** yes:
 
 If they correct you, fold the correction in and restate. Loop until you get an explicit yes.
 
-### Step 6: Surface baked-in assumptions after confirmation
+### Step 7: Surface baked-in assumptions after confirmation
 
 After the user explicitly accepts the restated intent, list the assumptions that are now baked into the desired outcome. This is not another requirements survey. It is a challenge pass: make the hidden premises visible so the user can decide whether any of them deserve pushback before the intent flows downstream into a spec, plan, or implementation.
 
@@ -151,7 +179,90 @@ Keep the list short enough to be usable: usually 5-8 assumptions. Prefer assumpt
 
 **Paralysis guardrail:** Challenge at most the 1-2 most fragile assumptions unless the user asks for a deeper teardown. The goal is to expose load-bearing uncertainty before handoff, not trap the user in endless reconsideration. If the user accepts the assumptions or asks to move on, proceed.
 
-If the user challenges an assumption, fold the correction back into the restate and ask for explicit confirmation again. If they accept the assumptions or ask to move on, the clarification phase is complete.
+If the user challenges an assumption, fold the correction back into the restate and ask for explicit confirmation again.
+
+### Step 8: Propose the best next action and get user approval
+
+After the user accepts the assumptions or asks to move on, synthesize the confirmed intent, binding decision criterion, and assumption inventory into a proposed next action. Do not re-ask questions already answered during clarification. Ask only if the decision cannot be made from the confirmed intent.
+
+The recommendation should propose one best next action from this action set:
+
+- Build
+- Validate first
+- Research
+- Write a spec
+- Reduce scope
+- Defer
+- Kill
+- Do nothing
+
+Format:
+
+```
+RECOMMENDED NEXT ACTION: <one action>
+WHY THIS: <1-2 sentences tied to the binding decision criterion>
+WHY NOT THE ALTERNATIVES:
+- <alternative> — <why not now>
+- <alternative> — <why not now>
+
+CHEAPEST TEST: <smallest action that tests the fragile assumption>
+DECISION THRESHOLD: <evidence that would change the recommendation>
+TIMEBOX: <how long to try before revisiting>
+
+Approve this next action, or would you change it?
+```
+
+The user owns the final choice. If they approve the recommendation, save it as the chosen action. If they refine or override it, update the action and rationale to match what they want, then save the artifact. Do not save the artifact until the next action has explicit user approval.
+
+### Step 9: Save the approved decision artifact
+
+Save a markdown file in the repository:
+
+```
+.sdas/<problem-slug>/decision.md
+```
+
+Use the repository root if it can be detected; otherwise use the current working directory. Derive `<problem-slug>` from the confirmed problem or outcome, not from the original underspecified ask. Use lowercase kebab-case, keep it short, and avoid generic names like `app`, `dashboard`, or `project`.
+
+The artifact must use this structure:
+
+```markdown
+# Clarified Problem: <short title>
+
+## Confirmed Intent
+- Outcome:
+- User:
+- Why now:
+- Success:
+- Constraint:
+- Binding decision criterion:
+- Out of scope:
+
+## Assumptions Baked Into This Intent
+1.
+2.
+3.
+
+## Most Fragile Assumption
+
+## Chosen Next Action
+
+## Why This Action
+
+## Alternatives Rejected
+- <alternative> — <why not now>
+
+## Cheapest Test
+
+## Decision Threshold
+
+## Timebox
+
+## Downstream Handoff
+<spec-driven-development / idea-refine / planning-and-task-breakdown / doubt-driven-development / none, with one sentence why>
+```
+
+If filesystem writes are unavailable, present the full markdown artifact in the response and name the intended path.
 
 ### The 95% Confidence Stop
 
@@ -159,15 +270,15 @@ You're done when you can answer yes to this:
 
 > *Can I predict the user's reaction to the next three questions I would ask?*
 
-If yes, you have shared understanding. Stop interviewing, produce the restate, get explicit confirmation, then surface the baked-in assumptions. If no, you're not done; ask the next question.
+If yes, you have shared understanding. Stop interviewing, produce the restate including the decision criterion, get explicit confirmation, surface the baked-in assumptions, propose the best next action, get explicit approval or correction, and save the markdown artifact. If no, you're not done; ask the next question.
 
 This is a checkable test, not a vibe. It also has a floor: if you've gone several rounds and still can't predict, that's information about the ask, not a reason to keep grinding. Stop and tell the user: "I've asked X questions and I still can't predict your reactions. Something foundational is missing. Want to step back?"
 
 ## Output
 
-The output of this skill is a **confirmed statement of intent plus an assumption inventory**: the restate from Step 4, with an explicit yes from Step 5, followed by the baked-in assumptions from Step 6. That's the deliverable. Specs, plans, and task lists are downstream; they consume the intent this skill produces.
+The output of this skill is a **saved decision artifact**: the restate from Step 5, with an explicit yes from Step 6, followed by the baked-in assumptions from Step 7, the user-approved next action from Step 8, and the saved artifact from Step 9.
 
-If the user wants the intent to persist (a multi-session project, a handoff to another collaborator), offer to save it to `docs/intent/[topic].md`. Only save if they confirm.
+After the next action is approved, always save the artifact to `.sdas/<problem-slug>/decision.md` when repository filesystem access is available. Specs, plans, and task lists are downstream; they consume the decision artifact this skill produces.
 
 ## Example
 
@@ -220,6 +331,7 @@ Here's what I now think you want:
 - Why now:      Experiments are scattered across docs and you no longer trust your memory.
 - Success:      You can see active experiments, owners, next check-ins, and current signal in one place.
 - Constraint:   Keep it lightweight enough to maintain weekly.
+- Decision:     Avoid building the wrong thing; choose the smallest action that proves the workflow will stay useful.
 - Out of scope: Automated analytics, executive reporting, and complex charting.
 
 Yes / no / refine?
@@ -237,6 +349,26 @@ ASSUMPTIONS BAKED INTO THIS INTENT:
 MOST FRAGILE ASSUMPTION: Manual weekly maintenance is acceptable. If the tracker is tedious to update, it will become another stale doc.
 
 Want to challenge any of these before we hand this off?
+
+User: No, move on.
+
+Agent:
+RECOMMENDED NEXT ACTION: Validate first.
+WHY THIS: The binding criterion is avoiding wasted work, and the fragile assumption is whether manual weekly maintenance will hold up.
+WHY NOT THE ALTERNATIVES:
+- Build — too easy to create another stale tracker before proving the update habit works.
+- Write a spec — premature until the weekly workflow has survived at least one real pass.
+
+CHEAPEST TEST: Run one manual weekly experiment review in a plain markdown table.
+DECISION THRESHOLD: If the review takes more than 20 minutes or misses active experiments, reduce scope or change the capture mechanism.
+TIMEBOX: One week.
+
+Approve this next action, or would you change it?
+
+User: Approved.
+
+Agent:
+Saved: .sdas/personal-experiment-tracker/decision.md
 ```
 
 Two questions in, the agent has discovered the actual ask isn't "a dashboard." It's "a list." Different artifact, different scope, different work. The dashboard would have been wrong.
@@ -246,8 +378,9 @@ Two questions in, the agent has discovered the actual ask isn't "a dashboard." I
 - **`idea-refine`**: downstream. If the confirmed intent is "I want X but I don't know how to scope it," hand off to `idea-refine` to generate variations against the now-explicit intent.
 - **`spec-driven-development`**: downstream. If the confirmed intent is concrete ("I want X for Y users with Z success criteria"), hand off to `spec-driven-development` to write it down.
 - **`planning-and-task-breakdown`**: two hops downstream of this skill (after the spec).
-- **`doubt-driven-development`**: opposite end of the timeline. Clarify-problem is pre-decision intent extraction; doubt-driven is post-decision artifact review. The Step 6 assumption inventory is a lightweight challenge pass; if the user wants an adversarial review of the confirmed intent or a downstream plan, hand off to `doubt-driven-development`.
+- **`doubt-driven-development`**: opposite end of the timeline. Clarify-problem is pre-decision intent extraction; doubt-driven is post-decision artifact review. The Step 7 assumption inventory is a lightweight challenge pass; if the user wants an adversarial review of the confirmed intent or a downstream plan, hand off to `doubt-driven-development`.
 - **`source-driven-development`**: orthogonal. Clarify-problem clarifies what the user wants; SDD verifies framework facts. They don't compete.
+- **No downstream skill**: valid when the best next action is defer, kill, do nothing, or run a small offline validation test.
 
 ## Common Rationalizations
 
@@ -261,6 +394,9 @@ Two questions in, the agent has discovered the actual ask isn't "a dashboard." I
 | "If I attach my guess, I'm leading them" | Leading is the point. Reacting is faster than generating from scratch. The risk is sycophancy, not leading; mitigate by being visibly willing to be wrong. |
 | "We've talked enough, I get it" | Test it: can you predict their reaction to the next three questions? If not, you don't get it yet. |
 | "The user said yes, we're done" | If the yes followed a vague restate or an open-ended "sounds good," the yes is hollow. Restate concretely and re-confirm. After a real yes, still surface baked-in assumptions before handoff. |
+| "The next action is obvious" | Obvious compared to what? Name the rejected alternatives and tie the recommendation to the user's binding decision criterion. |
+| "I'll ask for decision criteria at the end" | Too late. The criterion is part of clarification; use it to shape the restate and the recommendation. |
+| "The agent recommended it, so that's the decision" | No. The recommendation is a proposal. The final decision is whatever the user explicitly approves or corrects. |
 
 ## Red Flags
 
@@ -276,6 +412,10 @@ Two questions in, the agent has discovered the actual ask isn't "a dashboard." I
 - Skipping the "Out of scope" line in the restate (silent disagreement about non-goals is half of misalignment)
 - Skipping the assumption inventory after the user confirms the restate
 - Treating the assumptions list as a reason to block progress, instead of a final chance for the user to challenge hidden premises
+- Recommending a next action without naming the binding decision criterion
+- Saving the artifact before the user approves, refines, or overrides the recommended next action
+- Re-asking "who is this for?" or "what is success?" in Step 8 after those were already confirmed
+- Failing to save `.sdas/<problem-slug>/decision.md` when filesystem access is available
 
 ## Verification
 
@@ -285,11 +425,16 @@ After applying clarify-problem:
 - [ ] Every confidence number below ~70% was accompanied by a one-line reason (what's still unresolved or missing)
 - [ ] Questions were asked one at a time, each with the agent's guess attached
 - [ ] At least one "what would you actually want if you didn't have to justify it?" probe ran when the user gave a sophistication-signaling or convention-signaling answer
-- [ ] A concrete restate (Outcome / User / Why now / Success / Constraint / Out of scope) was written back to the user
+- [ ] The binding decision criterion was discovered during the interview, not bolted on at the end
+- [ ] A concrete restate (Outcome / User / Why now / Success / Constraint / Decision / Out of scope) was written back to the user
 - [ ] The user confirmed the restate with an explicit yes (not "whatever you think," not "sounds good," not silence)
 - [ ] After confirmation, baked-in assumptions were listed and the most fragile assumption was identified
 - [ ] The assumption inventory separated confirmed facts from hidden premises that could still be false
 - [ ] The challenge pass focused on the 1-2 most fragile assumptions unless the user asked for a deeper teardown
 - [ ] If the user challenged an assumption, the correction was folded back into the restate and re-confirmed
+- [ ] A best next action was recommended from the action set and justified against the binding decision criterion
+- [ ] The user explicitly approved, refined, or overrode the recommended next action before the artifact was saved
+- [ ] Rejected alternatives, cheapest test, decision threshold, and timebox were included
+- [ ] The final artifact was saved to `.sdas/<problem-slug>/decision.md`, or the intended path was named if filesystem writes were unavailable
 - [ ] At the stop point, the agent could predict reactions to the next three questions it would ask
-- [ ] Any handoff to a downstream skill (`idea-refine`, `spec-driven-development`) was framed in terms of the confirmed intent, not the original underspecified ask
+- [ ] Any handoff to a downstream skill (`idea-refine`, `spec-driven-development`, `planning-and-task-breakdown`, `doubt-driven-development`) was framed in terms of the saved decision artifact, not the original underspecified ask
